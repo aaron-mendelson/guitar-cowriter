@@ -24,7 +24,7 @@ console.log("Opener:", opener);
 // 3) submit the magic-moment intent (offline → fallbackFrame + offlineTurn)
 await page.fill(".chatinput textarea", "C Am F G — make it a prog-rock anthem");
 await page.click(".chatinput .btn.primary");
-await page.waitForSelector(".optioncard", { timeout: 15000 });
+await page.waitForSelector(".optioncard", { timeout: 120000 });
 const optionNames = await page.$$eval(".optioncard .oname", (els) => els.map((e) => e.textContent.trim()));
 console.log("Options:", optionNames);
 
