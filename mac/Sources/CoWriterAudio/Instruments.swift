@@ -16,7 +16,13 @@ public struct InstrumentInfo: Identifiable {
     public let name: String
     public let manufacturer: String
     public let component: AVAudioUnitComponent
-    public var id: String { "\(manufacturer) — \(name)" }
+    /// Unique per component (type/subtype/manufacturer codes included):
+    /// display names alone can collide across variants of one plugin, and
+    /// duplicate IDs crash SwiftUI pickers on selection.
+    public var id: String {
+        let d = component.audioComponentDescription
+        return "\(manufacturer) — \(name) #\(d.componentType).\(d.componentSubType).\(d.componentManufacturer)"
+    }
 
     public init(name: String, manufacturer: String, component: AVAudioUnitComponent) {
         self.name = name
@@ -46,9 +52,13 @@ extension CoWriterEngine {
         components(ofType: kAudioUnitType_MusicDevice)
     }
 
-    /// All installed effect AUs (kAudioUnitType_Effect).
+    /// All installed effect AUs: plain effects (aufx) PLUS MIDI-controlled
+    /// music effects (aumf) — most guitar amp suites register as the latter
+    /// (Neural DSP Archetype, AmpliTube, BIAS, Genome).
     nonisolated public static func listEffects() -> [InstrumentInfo] {
-        components(ofType: kAudioUnitType_Effect)
+        (components(ofType: kAudioUnitType_Effect)
+            + components(ofType: kAudioUnitType_MusicEffect))
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     nonisolated private static func components(ofType type: OSType) -> [InstrumentInfo] {
@@ -92,21 +102,40 @@ extension CoWriterEngine {
         instruments[voice] = node
     }
 
-    /// Load (or clear, with nil) an effect AU intended as the input-monitor
-    /// insert (input → effect → recording tap). v1 keeps it simple: the node
-    /// is instantiated and attached but NOT wired into the render graph —
-    /// wiring lands with the overdub/monitor-bus feature. It is never
-    /// connected toward the output.
-    public func loadInputEffect(_ info: InstrumentInfo?) async throws {
-        if let old = inputEffect {
-            avEngine.detach(old)
-            inputEffect = nil
+    /// Load (or clear, with nil) the effect AU in insert `slot` of the guitar
+    /// input chain: input → inserts in slot order → wet tap → Guitar fader.
+    /// Amp sims and pedal effects go here. The engine is stopped and
+    /// restarted around the rewire (same pattern as input-device selection).
+    public func loadInputEffect(_ info: InstrumentInfo?, at slot: Int) async throws {
+        buildGraphIfNeeded()
+        while inputEffects.count <= slot { inputEffects.append(nil) }
+        var node: AVAudioUnit?
+        if let info {
+            node = try await AVAudioUnit.instantiate(
+                with: info.component.audioComponentDescription, options: [])
         }
-        guard let info else { return }
-        let node = try await AVAudioUnit.instantiate(
-            with: info.component.audioComponentDescription, options: [])
-        avEngine.attach(node)
-        inputEffect = node
+        try restartAround {
+            if let old = inputEffects[slot] {
+                avEngine.disconnectNodeOutput(old)
+                avEngine.detach(old)
+                inputEffects[slot] = nil
+            }
+            if let node {
+                avEngine.attach(node)
+                inputEffects[slot] = node
+            }
+            rewireInputChain()
+        }
+    }
+
+    /// The hosted AU in an insert slot — for opening its plugin editor.
+    public func inputEffectUnit(at slot: Int) -> AVAudioUnit? {
+        inputEffects.indices.contains(slot) ? inputEffects[slot] : nil
+    }
+
+    /// The hosted instrument AU behind a voice — for opening its plugin editor.
+    public func instrumentUnit(for voice: Voice) -> AVAudioUnit? {
+        instruments[voice]
     }
 
     /// Built-in samplers for any voice slot that has no instrument yet,

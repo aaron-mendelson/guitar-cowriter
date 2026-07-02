@@ -2,6 +2,7 @@
 // Facade.swift — the single integration point between UI and the
 // audio layer (CoWriterAudio). UI talks ONLY to this.
 // ============================================================
+import AVFoundation
 import Foundation
 import CoWriterKit
 import CoWriterAudio
@@ -77,7 +78,7 @@ final class AudioFacade {
 
     // MARK: mixer / devices / instruments (pass-throughs for future UI)
 
-    private(set) var volumeCache: [AudioChannel: Float] = [.ai: 0.8, .backing: 0.8, .click: 0.8, .master: 0.8, .input: 0]
+    private(set) var volumeCache: [AudioChannel: Float] = [.ai: 0.8, .backing: 0.8, .click: 0.8, .master: 0.8, .input: 1]
     func setVolume(_ channel: AudioChannel, _ v: Float) {
         volumeCache[channel] = v
         engine.setVolume(channel, v)
@@ -88,6 +89,22 @@ final class AudioFacade {
     func instruments() -> [InstrumentInfo] { CoWriterEngine.listInstruments() }
     func loadInstrument(_ i: InstrumentInfo?, for voice: Voice) async throws {
         try await engine.loadInstrument(i, for: voice)
+    }
+    func instrumentUnit(for voice: Voice) -> AVAudioUnit? { engine.instrumentUnit(for: voice) }
+
+    // MARK: guitar insert chain (amp sim / effects) + app monitoring
+
+    func effects() -> [InstrumentInfo] { CoWriterEngine.listEffects() }
+    func loadInputEffect(_ i: InstrumentInfo?, at slot: Int) async throws {
+        ensureStarted()
+        try await engine.loadInputEffect(i, at: slot)
+    }
+    func inputEffectUnit(at slot: Int) -> AVAudioUnit? { engine.inputEffectUnit(at: slot) }
+    private(set) var monitorOn = false
+    func setMonitor(_ on: Bool) {
+        ensureStarted()
+        monitorOn = on
+        engine.setMonitor(on)
     }
 
     // MARK: capture

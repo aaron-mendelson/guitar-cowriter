@@ -1,13 +1,14 @@
 // ============================================================
-// Recorder.swift — record the master mix (+ the un-monitored
-// input, software-mixed in) to an .m4a (AAC) in
+// Recorder.swift — record the master mix (+ the WET guitar —
+// post insert chain — software-mixed in) to an .m4a (AAC) in
 // ~/Music/GuitarCowriter/.
 //
-// The master tap provides the file's clock; input buffers are
-// gain-scaled (AudioChannel.input volume), resampled to the
-// master rate if needed, and pulled from a FIFO into each
-// master buffer before writing. Alignment is loose (a few ms) —
-// fine for v1 idea-capture takes.
+// The master tap provides the file's clock; wet-tap buffers are
+// gain-scaled (the Guitar fader; zeroed by the engine while
+// monitoring, since the wet guitar is then already inside the
+// master mix), resampled to the master rate if needed, and
+// pulled from a FIFO into each master buffer before writing.
+// Alignment is loose (a few ms) — fine for v1 idea-capture takes.
 // ============================================================
 import AVFoundation
 import Accelerate
@@ -51,7 +52,7 @@ public final class Recorder {
 
         let s = try RecordingSession(url: url, format: masterFormat, inputGain: engine.inputGain)
         s.masterID = engine.masterHub.add { [weak s] buffer, _ in s?.writeMaster(buffer) }
-        s.inputID = engine.inputHub.add { [weak s] buffer, _ in s?.pushInput(buffer) }
+        s.inputID = engine.wetHub.add { [weak s] buffer, _ in s?.pushInput(buffer) }
         session = s
         return url
     }
@@ -62,7 +63,7 @@ public final class Recorder {
         guard let s = session else { return nil }
         session = nil
         if let id = s.masterID { engine.masterHub.remove(id) }
-        if let id = s.inputID { engine.inputHub.remove(id) }
+        if let id = s.inputID { engine.wetHub.remove(id) }
         return s.finish()
     }
 

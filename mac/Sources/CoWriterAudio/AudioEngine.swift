@@ -4,12 +4,16 @@
 // Graph:
 //   [ai instrument]      → aiMixer      ┐
 //   [backing instrument] → backingMixer ├→ mainMixerNode → output
-//   [click sampler]      → clickMixer   ┘
-//   inputNode ── (tap only: meters / pitch tracking / recording)
+//   [click sampler]      → clickMixer   ┤
+//   inputNode → guitarBus → [insert AUs] → guitarWet → guitarMonitor ┘
 //
-// The input is NEVER routed to the output — the user monitors
-// through his audio interface. The input node exists in the graph
-// solely so it can be tapped.
+// The guitar path: the input feeds the insert chain (amp-sim /
+// effect AUs in slot order); guitarWet carries the processed "wet"
+// signal — tapped for recording — and guitarMonitor (the Guitar
+// fader) gates whether it reaches the speakers. Monitoring is OFF
+// by default: the user normally direct-monitors through his
+// interface. The dry input is additionally tapped for meters and
+// pitch tracking.
 // ============================================================
 import AVFoundation
 import Accelerate
@@ -96,22 +100,30 @@ public final class CoWriterEngine {
     let aiMixer = AVAudioMixerNode()
     let backingMixer = AVAudioMixerNode()
     let clickMixer = AVAudioMixerNode()
+    /// Guitar insert path: input → guitarBus (format normalizer) →
+    /// insert AUs → guitarWet (unity; wet tap) → guitarMonitor (fader) → main.
+    let guitarBus = AVAudioMixerNode()
+    let guitarWet = AVAudioMixerNode()
+    let guitarMonitor = AVAudioMixerNode()
 
     var instruments: [Voice: AVAudioUnit] = [:]
     var clickSampler: AVAudioUnitSampler?
     var drumSampler: AVAudioUnitSampler?
-    var inputEffect: AVAudioUnit?
+    /// Insert slots of the guitar chain, wired in slot order (nil = empty).
+    var inputEffects: [AVAudioUnit?] = []
 
-    /// Fan-outs for the two shared taps (input node, main mixer).
+    /// Fan-outs for the shared taps (dry input, wet guitar, main mixer).
     let inputHub = TapHub()
+    let wetHub = TapHub()
     let masterHub = TapHub()
     let meters = MeterStore()
-    /// Software gain on the input *metering/recording* path only — the input
-    /// is never monitored, so this never touches what the user hears.
+    /// Gain on the guitar's *record mix-in* path only. Zeroed while
+    /// monitoring — the wet guitar is then already in the master mix.
     let inputGain = AtomicFloat(1.0)
 
     private var graphBuilt = false
     private var tapsInstalled = false
+    private var monitorOn = false
     private var volumes: [AudioChannel: Float] = [
         .ai: 1, .backing: 0.9, .click: 0.7, .input: 1, .master: 1,
     ]
@@ -128,6 +140,9 @@ public final class CoWriterEngine {
     public func start() throws {
         guard !avEngine.isRunning else { return }
         buildGraphIfNeeded()
+        // Re-form the input-side connections every start: the input format
+        // (device, permission) may have changed since the graph was built.
+        rewireInputChain()
         ensureDefaultInstruments()
         avEngine.prepare()
         try avEngine.start()
@@ -141,12 +156,23 @@ public final class CoWriterEngine {
 
     // MARK: Volume / mute / meters
 
-    /// Set a channel's volume [0, 1]. For `.input` this only scales metering
-    /// and the recording mix — input is never routed to the speakers.
+    /// Set a channel's volume [0, 1]. `.input` is the Guitar fader: the level
+    /// of the wet (post-insert) guitar — in the monitor mix when monitoring
+    /// is on, in the recorded take either way.
     public func setVolume(_ channel: AudioChannel, _ v: Float) {
         volumes[channel] = max(0, min(1, v))
         applyVolume(channel)
     }
+
+    /// Route the wet guitar chain to the speakers (through the Guitar fader).
+    /// Off by default — the user normally direct-monitors via the interface;
+    /// turn on when an amp sim is hosted so the app carries his tone.
+    public func setMonitor(_ on: Bool) {
+        monitorOn = on
+        applyVolume(.input)
+    }
+
+    public var isMonitoring: Bool { monitorOn }
 
     public func setMute(_ channel: AudioChannel, _ muted: Bool) {
         if muted { mutedChannels.insert(channel) } else { mutedChannels.remove(channel) }
@@ -174,10 +200,34 @@ public final class CoWriterEngine {
         avEngine.connect(aiMixer, to: main, fromBus: 0, toBus: main.nextAvailableInputBus, format: nil)
         avEngine.connect(backingMixer, to: main, fromBus: 0, toBus: main.nextAvailableInputBus, format: nil)
         avEngine.connect(clickMixer, to: main, fromBus: 0, toBus: main.nextAvailableInputBus, format: nil)
-        // Materialize the input node in the graph. Tap-only — never connected
-        // toward the output (no monitoring through the app).
-        _ = avEngine.inputNode
+        // Fixed tail of the guitar path; the head (input → bus → inserts →
+        // guitarWet) is (re)formed by rewireInputChain().
+        avEngine.attach(guitarBus)
+        avEngine.attach(guitarWet)
+        avEngine.attach(guitarMonitor)
+        avEngine.connect(guitarWet, to: guitarMonitor, fromBus: 0, toBus: 0, format: nil)
+        avEngine.connect(guitarMonitor, to: main, fromBus: 0, toBus: main.nextAvailableInputBus, format: nil)
         for c in AudioChannel.allCases { applyVolume(c) }
+    }
+
+    /// (Re)connect input → guitarBus → [insert AUs in slot order] → guitarWet.
+    /// Called on start, and inside the stopped window of insert-chain edits.
+    /// guitarBus is a mixer so it absorbs whatever format the device delivers
+    /// (mono DI → stereo) before the effects see it. With no usable input
+    /// (no device / no mic permission) the chain is left source-less — the
+    /// mixers render silence and the rest of the graph is unaffected.
+    func rewireInputChain() {
+        let input = avEngine.inputNode
+        let chain: [AVAudioNode] = [guitarBus] + inputEffects.compactMap { $0 } + [guitarWet]
+        avEngine.disconnectNodeOutput(input)
+        for node in chain.dropLast() { avEngine.disconnectNodeOutput(node) }
+        let inFmt = input.inputFormat(forBus: 0)
+        if inFmt.sampleRate > 0 && inFmt.channelCount > 0 {
+            avEngine.connect(input, to: guitarBus, format: inFmt)
+        }
+        for i in 0..<(chain.count - 1) {
+            avEngine.connect(chain[i], to: chain[i + 1], format: nil)
+        }
     }
 
     func mixer(for voice: Voice) -> AVAudioMixerNode {
@@ -194,7 +244,11 @@ public final class CoWriterEngine {
         case .backing: backingMixer.outputVolume = eff
         case .click: clickMixer.outputVolume = eff
         case .master: avEngine.mainMixerNode.outputVolume = eff
-        case .input: inputGain.value = eff   // metering/recording bus only
+        case .input:
+            // Guitar fader: monitor level when monitoring (the master tap then
+            // already contains the guitar), record mix-in gain otherwise.
+            guitarMonitor.outputVolume = monitorOn ? eff : 0
+            inputGain.value = monitorOn ? 0 : eff
         }
     }
 
@@ -209,7 +263,7 @@ public final class CoWriterEngine {
         let meters = self.meters
         let masterHub = self.masterHub
         let inputHub = self.inputHub
-        let gain = self.inputGain
+        let wetHub = self.wetHub
 
         func meterTap(_ node: AVAudioNode, _ channel: AudioChannel) {
             let fmt = node.outputFormat(forBus: 0)
@@ -230,11 +284,17 @@ public final class CoWriterEngine {
         let input = avEngine.inputNode
         let inFmt = input.inputFormat(forBus: 0)
         if inFmt.sampleRate > 0 && inFmt.channelCount > 0 {
-            // 4096-frame tap: shared by input meter, PitchTracker, Recorder.
+            // 4096-frame DRY tap: input meter + PitchTracker (tracking wants
+            // the clean signal, not the amp-simmed one).
             input.installTap(onBus: 0, bufferSize: 4096, format: inFmt) { buffer, time in
-                meters.set(.input, CoWriterEngine.rmsOf(buffer) * gain.value)
+                meters.set(.input, CoWriterEngine.rmsOf(buffer))
                 inputHub.broadcast(buffer, time)
             }
+        }
+        // WET tap (post insert chain, pre Guitar fader): feeds the Recorder.
+        guitarWet.installTap(onBus: 0, bufferSize: 4096,
+                             format: guitarWet.outputFormat(forBus: 0)) { buffer, time in
+            wetHub.broadcast(buffer, time)
         }
     }
 
@@ -244,6 +304,7 @@ public final class CoWriterEngine {
         aiMixer.removeTap(onBus: 0)
         backingMixer.removeTap(onBus: 0)
         clickMixer.removeTap(onBus: 0)
+        guitarWet.removeTap(onBus: 0)
         avEngine.mainMixerNode.removeTap(onBus: 0)
         avEngine.inputNode.removeTap(onBus: 0)
         meters.reset()

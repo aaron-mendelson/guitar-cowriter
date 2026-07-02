@@ -15,8 +15,9 @@ the co-writing experience, the melodic-lens toolkit, the intent-first keystone, 
   - `Sources/CoWriterKit` — theory engine ported from the web TS (55 checks), progression,
     melodic lenses + style knobs, backing arrangements. Pure, value-typed.
   - `Sources/CoWriterAudio` — AVAudioEngine body: AU instrument/effect hosting, AudioBox
-    input selection (CoreAudio HAL), lookahead transport, NSDF pitch tracker (±0.1 cent),
-    GM percussion sampler, recorder.
+    input selection (CoreAudio HAL), guitar insert chain (input → amp-sim/effect AU slots →
+    wet tap → Guitar fader; app monitoring off by default, takes always record wet),
+    lookahead transport, NSDF pitch tracker (±0.1 cent), GM percussion sampler, recorder.
   - `Sources/GuitarCowriter` — SwiftUI shell. `Facade.swift` is the ONLY seam UI→audio;
     `TheoryBridge.swift` is the ONLY seam app→engine; `Brain.swift` talks to the server.
 - **Web app (root)** — Vite/React/TS, kept as demo; live at aaron-mendelson.github.io/guitar-cowriter
@@ -45,9 +46,20 @@ the co-writing experience, the melodic-lens toolkit, the intent-first keystone, 
 - Commit email: aaron@modernhorizons.com. Verify builds before claiming done:
   `cd mac && swift build && swift run CoWriterKitChecks` (and web: `npx vitest run`).
 
-## Next up (as of 2026-07-02)
+## Status: PAUSED FOR RETHINK (2026-07-02)
 
-1. Amp-sim/effect AU insert chain (engine has loadInputEffect; routing + UI slot needed)
-2. Generative backing layer (Suno/MusicGen adapter — "bounce a produced track" from progression+vibe)
-3. Native taste profile, session persistence, mixer meters
-4. Capture start sync to loop boundary (press 🎤 mid-loop → snap to bar 1)
+Aaron owns Mixed In Key **Captain Plugins Epic** (installed on nomad as aumu AUs) — it covers
+key-locked progressions + chord-following melody/bass/drums + MIDI/audio export, i.e. most of
+the planned backing layer and composition-side structure. The gap it does NOT cover — and the
+reason this project exists — is **co-writing guitar licks**: listening, fretboard-native ideas,
+reacting to how Aaron plays a phrase back. Open question under rethink: the current build's
+AI voice (quantized MIDI through an AU instrument, chat-turn cadence) may not fit lick
+co-writing either. Candidate directions: articulation-aware note events (bends/slides),
+phrase-bank vocabulary + motif transforms over raw LLM notes, jam-loop (trade fours) instead
+of chat cadence.
+
+## Next up (if resumed on the old track)
+
+1. Generative backing layer — likely superseded by Captain Epic (see Status)
+2. Native taste profile, session persistence, mixer meters (+ persist rig: inserts/instruments)
+3. Capture start sync to loop boundary (press 🎤 mid-loop → snap to bar 1)
