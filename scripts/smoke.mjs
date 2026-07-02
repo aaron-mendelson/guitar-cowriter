@@ -66,6 +66,20 @@ await page.waitForTimeout(300);
 const sys = await page.$$eval(".msg.system", (els) => els.map((e) => e.textContent.trim()));
 console.log("System msgs:", sys);
 
+// 9.5) lens bar generates a line directly (offline engine path)
+await page.click('button.btn.ghost:has-text("Guide-tone line")');
+await page.waitForTimeout(600);
+const lensMsg = await page.$$eval(".msg.system", (els) => els.map((e) => e.textContent).filter((t) => t.includes("Lens:")));
+console.log("Lens fired:", lensMsg.length > 0);
+if (!lensMsg.length) throw new Error("lens bar did not fire");
+// stop playback the lens started
+const pb = await page.$(".transport .btn.primary");
+if ((await pb.textContent()).includes("Stop")) await pb.click();
+
+// 9.6) style knobs render + move one
+const knobCount = await page.$$eval(".stagecol input[type=range]", (els) => els.length);
+console.log("Range inputs on stage (bpm + knobs + faders):", knobCount);
+
 // 10) band toggle + chord loop tap
 await page.click("text=🥁 band");
 await page.click(".chordchip .cname >> nth=1"); // loop Am

@@ -19,6 +19,30 @@ import { applySong, applyPhrases, auditionPhrase, startCapture, stopCapture, pla
 
 const session: CowriterSession = { history: [], frame: null };
 
+/** Vibe references pulled from pasted links (YouTube etc.) — merged into every prompt. */
+const inspirations: string[] = [];
+
+const YT_RE = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s]+|youtu\.be\/[^\s]+|youtube\.com\/shorts\/[^\s]+))/i;
+
+async function pullInspiration(text: string): Promise<string | null> {
+  const m = text.match(YT_RE);
+  if (!m) return null;
+  try {
+    const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(m[1])}`);
+    const j = (await res.json()) as { title?: string; author_name?: string };
+    if (!j.title) return null;
+    const line = `Reference track for the vibe: "${j.title}"${j.author_name ? ` by ${j.author_name}` : ""} — aim the feel/energy near this.`;
+    inspirations.push(line);
+    return `${j.title}${j.author_name ? ` — ${j.author_name}` : ""}`;
+  } catch {
+    return null;
+  }
+}
+
+function withInspiration(examples: string[]): string[] {
+  return [...inspirations.slice(-3), ...examples];
+}
+
 function frameToSong(frame: SessionFrame, prev: Song | null): Song | null {
   if (frame.have.kind === "progression" && frame.have.chords?.length) {
     // pick tonic: explicit key in vibe, else first chord
@@ -65,6 +89,9 @@ export function useCowriter() {
     s.addMsg({ who: "user", text });
     s.setBusy(true);
     try {
+      // pasted YouTube link → pull title/author as a vibe reference
+      const ref = await pullInspiration(text);
+      if (ref) s.addMsg({ who: "system", text: `🎬 Pulled reference: ${ref}` });
       // 1) frame the intent (first message or when it looks like a re-frame)
       let frame = session.frame;
       if (!frame || /[A-G](♯|#|♭|b)?(m|maj7|m7|7)?(\s+[A-G](♯|#|♭|b)?(m|maj7|m7|7)?){1,}/.test(text)) {
@@ -81,7 +108,7 @@ export function useCowriter() {
       const ctx = {
         song: st.getState().song,
         tasteNotes: tasteNotes(),
-        phraseExamples: relevantPhrases(frame),
+        phraseExamples: withInspiration(relevantPhrases(frame)),
       };
       const turn = hasKey()
         ? await cowriterTurn(session, text, ctx).catch((e: Error) => {
@@ -158,7 +185,7 @@ export function useCowriter() {
       const summary = diffs.length ? describeDiffs(diffs) : "played it essentially as proposed";
       s.setBusy(true);
       try {
-        const ctx = { song, tasteNotes: tasteNotes(), phraseExamples: relevantPhrases(session.frame) };
+        const ctx = { song, tasteNotes: tasteNotes(), phraseExamples: withInspiration(relevantPhrases(session.frame)) };
         const turn = hasKey()
           ? await reactToVariant(session, summary, ctx).catch((e: Error) => {
               st.getState().addMsg({ who: "system", text: `⚠ ${e.message}` });

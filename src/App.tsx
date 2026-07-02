@@ -11,6 +11,8 @@ import TransportBar from "./ui/TransportBar";
 import Chat from "./ui/Chat";
 import MixerPanel from "./ui/MixerPanel";
 import SettingsModal from "./ui/SettingsModal";
+import StyleKnobs from "./ui/StyleKnobs";
+import LensBar from "./ui/LensBar";
 import { useCowriter } from "./ui/useCowriter";
 import { pluck } from "./ui/audioFacade";
 import "./theme.css";
@@ -101,11 +103,14 @@ export default function App() {
               <span><i className="chip" style={{ background: "var(--voice-ai)" }} /> AI voice ring</span>
               <span><i className="chip" style={{ background: "var(--voice-user)" }} /> your take ring</span>
             </div>
+            <LensBar />
           </div>
 
           <TransportBar onCaptureToggle={() => void captureToggle()} captureDisabled={false} />
 
           {song && <div className="panel"><Timeline song={song} /></div>}
+
+          {song && <StyleKnobs />}
 
           <MixerPanel />
         </div>
