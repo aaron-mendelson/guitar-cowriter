@@ -161,6 +161,83 @@ export function displace(events: NoteEvent[], beats: number): NoteEvent[] {
   return events.map((e) => ({ ...e, startBeat: e.startBeat + beats }));
 }
 
+/* ---------- Style-knob transforms: make the knobs physical ---------- */
+
+export interface Knobs { density: number; chromaticism: number; feel: number; register: number }
+
+/** Reshape a phrase according to the style knobs (0..1 each, 0.5 = neutral).
+ *  density   — <0.4 thins to strong-beat notes; >0.6 adds pickup notes
+ *  register  — transposes by octaves toward a target center (55..73)
+ *  chromaticism — >0.6 converts bridge notes to chromatic approaches (color)
+ *  feel      — >0.55 swings off-beat eighths later (up to ~0.12 beat)
+ */
+export function applyKnobs(phrase: Phrase, knobs: Knobs): Phrase {
+  let events = [...phrase.events].sort((a, b) => a.startBeat - b.startBeat);
+
+  // density: thin
+  if (knobs.density < 0.4 && events.length > 2) {
+    const keepEvery = knobs.density < 0.2 ? 2 : 3; // drop 1 of every N weak-beat notes
+    let weakCount = 0;
+    events = events.filter((e) => {
+      const strong = Math.abs(e.startBeat - Math.round(e.startBeat)) < 0.01 && Math.round(e.startBeat) % 2 === 0;
+      if (strong) return true;
+      weakCount++;
+      return weakCount % keepEvery !== 0;
+    });
+  }
+  // density: add pickups into the next note
+  if (knobs.density > 0.6) {
+    const extra: NoteEvent[] = [];
+    for (let i = 1; i < events.length; i++) {
+      const prev = events[i - 1], cur = events[i];
+      const gap = cur.startBeat - (prev.startBeat + prev.durBeat);
+      if (gap >= 0.5 && Math.abs(cur.midi - prev.midi) >= 2) {
+        const step = cur.midi > prev.midi ? -2 : 2; // approach from a step away
+        extra.push({
+          midi: cur.midi + step, startBeat: cur.startBeat - 0.5, durBeat: 0.5,
+          role: "bridge", vel: (cur.vel ?? 0.8) * 0.8,
+        });
+      }
+      if (knobs.density > 0.85 && extra.length && i % 2 === 0) {
+        // extra-busy: double the pickup an eighth earlier
+        const p = extra[extra.length - 1];
+        extra.push({ ...p, startBeat: p.startBeat - 0.5, midi: p.midi + (cur.midi > prev.midi ? -1 : 1) });
+      }
+    }
+    events = [...events, ...extra].sort((a, b) => a.startBeat - b.startBeat);
+  }
+  // register: shift toward target center by whole octaves
+  const target = 55 + knobs.register * 18;
+  if (events.length) {
+    const avg = events.reduce((n, e) => n + e.midi, 0) / events.length;
+    const octaves = Math.round((target - avg) / 12);
+    if (octaves !== 0) events = events.map((e) => ({ ...e, midi: e.midi + 12 * octaves }));
+  }
+  // chromaticism: sharpen bridge notes into chromatic approaches
+  if (knobs.chromaticism > 0.6) {
+    events = events.map((e, i) => {
+      const next = events[i + 1];
+      if (e.role === "bridge" && next && Math.abs(next.midi - e.midi) >= 2) {
+        return { ...e, midi: next.midi + (next.midi > e.midi ? -1 : 1), role: "color" as const };
+      }
+      return e;
+    });
+  }
+  // feel: swing the off-beat eighths late
+  if (knobs.feel > 0.55) {
+    const push = (knobs.feel - 0.5) * 0.24; // up to ~0.12 beat
+    events = events.map((e) => {
+      const frac = e.startBeat - Math.floor(e.startBeat);
+      return Math.abs(frac - 0.5) < 0.05 ? { ...e, startBeat: e.startBeat + push } : e;
+    });
+  }
+
+  return normalizePhrase({
+    ...phrase,
+    events: events.map((e) => ({ ...e, stringNum: undefined, fret: undefined })),
+  });
+}
+
 /** All lenses, keyed — the menu the co-writer picks from. */
 export const LENSES = {
   topNote: { label: "Top-note line", gen: topNoteLine, teach: "The top note of each chord voicing is already a melody — choosing inversions IS writing the top-line." },

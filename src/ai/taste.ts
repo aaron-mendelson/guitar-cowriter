@@ -95,17 +95,27 @@ export function setKnob(k: keyof TasteProfile["knobs"], v: number): void {
   saveTaste(taste);
 }
 
-function knobWord(k: keyof TasteProfile["knobs"], v: number): string | null {
-  if (v >= 0.4 && v <= 0.6) return null; // near-default: not worth a note
+function knobWord(k: keyof TasteProfile["knobs"], v: number): string {
+  // Always emit a concrete directive — the knobs are the user's explicit
+  // dials and must audibly steer every suggestion, not just at extremes.
+  const pct = v.toFixed(2);
   switch (k) {
     case "density":
-      return v < 0.4 ? `prefers sparse density (knob ${v.toFixed(1)})` : `prefers busy density (knob ${v.toFixed(1)})`;
+      if (v < 0.4) return `DENSITY ${pct}: keep lines SPARSE — few notes, long holds, real rests; roughly 1–2 notes per bar`;
+      if (v > 0.6) return `DENSITY ${pct}: keep lines BUSY — eighth-note motion, pickups into each chord, few rests`;
+      return `DENSITY ${pct}: moderate motion — a phrase, then a breath`;
     case "chromaticism":
-      return v < 0.4 ? `prefers staying inside the key (knob ${v.toFixed(1)})` : `enjoys outside color notes (knob ${v.toFixed(1)})`;
+      if (v < 0.4) return `COLOR ${pct}: stay strictly INSIDE the key — chord tones and diatonic passing only`;
+      if (v > 0.6) return `COLOR ${pct}: go OUTSIDE — chromatic approach tones, Lydian ♯4, blue notes (mark them role "color")`;
+      return `COLOR ${pct}: mostly diatonic, an occasional chromatic approach`;
     case "feel":
-      return v < 0.4 ? `prefers a straight feel (knob ${v.toFixed(1)})` : `prefers a swung / behind-the-beat feel (knob ${v.toFixed(1)})`;
+      if (v < 0.4) return `FEEL ${pct}: straight, on-the-grid rhythm — integer and x.5 startBeats`;
+      if (v > 0.6) return `FEEL ${pct}: swung / behind-the-beat — favor off-beat entrances (x.5 / x.75 startBeats), never square`;
+      return `FEEL ${pct}: lightly relaxed timing`;
     case "register":
-      return v < 0.4 ? `prefers low-register melodies (knob ${v.toFixed(1)})` : `prefers high-register melodies (knob ${v.toFixed(1)})`;
+      if (v < 0.4) return `REGISTER ${pct}: keep the melody LOW (midi 52–62)`;
+      if (v > 0.6) return `REGISTER ${pct}: keep the melody HIGH (midi 68–80)`;
+      return `REGISTER ${pct}: mid register (midi 60–72)`;
   }
 }
 
@@ -119,9 +129,9 @@ export function tasteNotes(): string[] {
   for (const method of taste.dislikes) {
     notes.push(`Aaron tends to reject ${method} lines — avoid leading with them`);
   }
+  notes.push("STYLE KNOBS (explicit user dials — obey these in every option):");
   for (const k of Object.keys(taste.knobs) as (keyof TasteProfile["knobs"])[]) {
-    const word = knobWord(k, taste.knobs[k]);
-    if (word) notes.push(`Aaron ${word}`);
+    notes.push(`• ${knobWord(k, taste.knobs[k])}`);
   }
   return notes;
 }

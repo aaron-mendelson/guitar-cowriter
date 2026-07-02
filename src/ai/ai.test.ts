@@ -224,7 +224,7 @@ describe("taste profile", () => {
     setKnob("density", 0.3);
     expect(getTaste().knobs.density).toBe(0.3);
     const notes = tasteNotes();
-    expect(notes.some((n) => n.includes("sparse"))).toBe(true);
+    expect(notes.some((n) => n.toLowerCase().includes("sparse"))).toBe(true);
   });
 });
 

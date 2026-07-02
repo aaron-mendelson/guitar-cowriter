@@ -2,9 +2,12 @@
  * LensBar.tsx — one-tap melodic lenses: generate a line from the
  * engine directly (no AI needed), hear it over the loop.
  * ============================================================ */
-import { LENSES, type LensKey } from "../engine/melody";
+import { LENSES, applyKnobs, pentatonicBed, type LensKey } from "../engine/melody";
+import { getTaste } from "../ai/taste";
 import { useStore } from "../state/store";
 import { applyPhrases, play } from "./audioFacade";
+
+let clickSeed = 1; // each pentatonic tap gives a fresh sketch
 
 export default function LensBar() {
   const song = useStore((s) => s.song);
@@ -16,10 +19,11 @@ export default function LensBar() {
 
   const fire = async (key: LensKey) => {
     const lens = LENSES[key];
-    const phrase = lens.gen(song);
+    const raw = key === "pentatonic" ? pentatonicBed(song, clickSeed++) : lens.gen(song);
+    const phrase = applyKnobs(raw, getTaste().knobs); // knobs shape the line NOW
     setActivePhrase(phrase);
     applyPhrases([phrase]);
-    addMsg({ who: "system", text: `Lens: ${lens.label} — ${lens.teach}` });
+    addMsg({ who: "system", text: `Lens: ${lens.label} (knob-shaped) — ${lens.teach}` });
     if (!playing) await play(0);
   };
 

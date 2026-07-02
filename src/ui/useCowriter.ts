@@ -81,6 +81,16 @@ function optionToPhrase(opt: MelodyOption, song: Song | null): Phrase {
   });
 }
 
+/** Put a turn's first option straight onto the neck (and into the loop if
+ * playing) so every AI reply visibly changes the board — no click needed. */
+function placeFirstOption(turn: { options: MelodyOption[] }): void {
+  const s = useStore.getState();
+  if (!turn.options.length) return;
+  const phrase = optionToPhrase(turn.options[0], s.song);
+  s.setActivePhrase(phrase);
+  applyPhrases([phrase]);
+}
+
 export function useCowriter() {
   const st = useStore;
 
@@ -117,6 +127,7 @@ export function useCowriter() {
           })
         : offlineTurn(text, ctx);
       st.getState().addTurn(turn);
+      placeFirstOption(turn);
     } finally {
       st.getState().setBusy(false);
     }
@@ -193,6 +204,7 @@ export function useCowriter() {
             })
           : offlineTurn(`react to: ${summary}`, ctx);
         st.getState().addTurn(turn);
+        placeFirstOption(turn);
       } finally {
         st.getState().setBusy(false);
       }

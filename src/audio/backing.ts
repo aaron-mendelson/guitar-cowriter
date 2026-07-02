@@ -115,11 +115,36 @@ export function backingPhrases(song: Song, arr: Arrangement): Phrase[] {
     const events: NoteEvent[] = [];
     for (const { slot, startBeat } of tl) {
       const { midis } = slotVoicing(slot);
-      for (const midi of midis) {
-        events.push({ midi, startBeat, durBeat: slot.beats, role: "target", vel: 0.45 });
+      switch (arr.style) {
+        case "ballad": {
+          // broken-chord arpeggio low→high, notes ring to the bar line
+          midis.forEach((midi, i) => {
+            events.push({ midi, startBeat: startBeat + i * 0.5, durBeat: Math.max(0.5, slot.beats - i * 0.5), role: "target", vel: 0.4 });
+          });
+          break;
+        }
+        case "funk": {
+          // short stabs on the "and" of 1 and on beat 3
+          for (const off of [1.5, 3]) {
+            for (const midi of midis) events.push({ midi, startBeat: startBeat + off, durBeat: 0.4, role: "target", vel: 0.5 });
+          }
+          break;
+        }
+        case "rock": {
+          // driving half-note pulses
+          for (const off of [0, 2]) {
+            for (const midi of midis) events.push({ midi, startBeat: startBeat + off, durBeat: 1.8, role: "target", vel: 0.42 });
+          }
+          break;
+        }
+        default: {
+          // pop: pad on 1 with an answering push on the "and" of 3
+          for (const midi of midis) events.push({ midi, startBeat, durBeat: 2.5, role: "target", vel: 0.42 });
+          for (const midi of midis) events.push({ midi, startBeat: startBeat + 2.5, durBeat: Math.max(0.5, slot.beats - 2.5), role: "target", vel: 0.34 });
+        }
       }
     }
-    phrases.push({ id: "backing-keys", label: "keys", lengthBeats: len, events, voice: "ai", method: "sustained pad" });
+    phrases.push({ id: "backing-keys", label: "keys", lengthBeats: len, events, voice: "ai", method: `${arr.style} keys` });
   }
 
   if (arr.drums) {

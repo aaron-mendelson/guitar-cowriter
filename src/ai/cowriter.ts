@@ -14,7 +14,8 @@ import {
   type Song, chordAtBeat, songLengthBeats, slotRoot,
 } from "../engine/progression";
 import { type NoteEvent, placeOnNeck } from "../engine/noteEvents";
-import { LENSES } from "../engine/melody";
+import { LENSES, applyKnobs } from "../engine/melody";
+import { getTaste } from "./taste";
 
 export interface CowriterSession {
   history: { role: "user" | "assistant"; content: string }[];
@@ -174,10 +175,11 @@ export function offlineTurn(_userText: string, ctx: CowriterContext): CowriterTu
     };
   }
 
+  const knobs = getTaste().knobs;
   const lensKeys = ["topNote", "guideTone", "pentatonic"] as const;
   const options: MelodyOption[] = lensKeys.map((key) => {
     const lens = LENSES[key];
-    const phrase = lens.gen(song);
+    const phrase = applyKnobs(lens.gen(song), knobs); // knobs shape offline lines too
     return {
       character: OFFLINE_CHARACTERS[key],
       method: phrase.method ?? lens.label,

@@ -160,3 +160,37 @@ describe("melodic lenses", () => {
     expect(up.map((e) => e.midi)).toEqual(p.events.map((e) => e.midi + 5));
   });
 });
+
+describe("applyKnobs (style knobs are physical)", () => {
+  const song = songFromChordNames(["C", "Am", "F", "G"], 0, "major", 90);
+  const neutral = { density: 0.5, chromaticism: 0.5, feel: 0.5, register: 0.5 };
+  it("neutral knobs ≈ identity (same note count)", async () => {
+    const { applyKnobs, guideToneLine } = await import("./melody");
+    const p = guideToneLine(song);
+    expect(applyKnobs(p, neutral).events.length).toBe(p.events.length);
+  });
+  it("low density thins, high density thickens", async () => {
+    const { applyKnobs, targetAndBridge } = await import("./melody");
+    const p = targetAndBridge(song);
+    const sparse = applyKnobs(p, { ...neutral, density: 0.1 });
+    const busy = applyKnobs(p, { ...neutral, density: 0.9 });
+    expect(sparse.events.length).toBeLessThan(p.events.length);
+    expect(busy.events.length).toBeGreaterThan(p.events.length);
+  });
+  it("register shifts average pitch toward the target", async () => {
+    const { applyKnobs, guideToneLine } = await import("./melody");
+    const p = guideToneLine(song);
+    const avg = (ph: { events: { midi: number }[] }) => ph.events.reduce((n, e) => n + e.midi, 0) / ph.events.length;
+    expect(avg(applyKnobs(p, { ...neutral, register: 1 }))).toBeGreaterThan(avg(applyKnobs(p, { ...neutral, register: 0 })));
+  });
+  it("high feel swings off-beat eighths later", async () => {
+    const { applyKnobs, targetAndBridge } = await import("./melody");
+    const p = targetAndBridge(song);
+    const offbeat = p.events.find((e) => Math.abs(e.startBeat - Math.floor(e.startBeat) - 0.5) < 0.05);
+    if (offbeat) {
+      const swung = applyKnobs(p, { ...neutral, feel: 1 });
+      const match = swung.events.find((e) => Math.abs(e.midi - offbeat.midi) <= 1 && Math.abs(e.startBeat - offbeat.startBeat) < 0.3);
+      expect(match!.startBeat).toBeGreaterThan(offbeat.startBeat);
+    }
+  });
+});
