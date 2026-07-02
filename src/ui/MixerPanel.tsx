@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../state/store";
 import { listAudioInputs, setChannelGain, muteChannel, channelMeter } from "./audioFacade";
+import { startRecording, stopRecording } from "../audio/mixer";
 
 type Ch = "guitar" | "ai" | "backing" | "click" | "input" | "master";
 
@@ -59,6 +60,7 @@ function Fader({ ch, label }: { ch: Ch; label: string }) {
 
 export default function MixerPanel() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [recording, setRecording] = useState(false);
   const inputDeviceId = useStore((s) => s.inputDeviceId);
   const setInputDeviceId = useStore((s) => s.setInputDeviceId);
 
@@ -66,9 +68,27 @@ export default function MixerPanel() {
     listAudioInputs().then(setDevices).catch(() => setDevices([]));
   }, []);
 
+  const toggleRecord = async () => {
+    if (!recording) {
+      try { startRecording(); setRecording(true); } catch { /* audio not started */ }
+      return;
+    }
+    setRecording(false);
+    const blob = await stopRecording();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cowriter-take-${new Date().toISOString().slice(0, 19).replaceAll(":", "-")}.webm`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="mixer panel">
       {CHANNELS.map((c) => <Fader key={c.ch} ch={c.ch} label={c.label} />)}
+      <button className={`btn small${recording ? " primary" : ""}`} style={{ alignSelf: "center" }} onClick={() => void toggleRecord()}>
+        {recording ? "◼ Save take" : "⏺ Record"}
+      </button>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginLeft: "auto" }}>
         <label style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--comment)", fontWeight: 700 }}>
           Input device

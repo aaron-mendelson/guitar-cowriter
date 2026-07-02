@@ -2,9 +2,9 @@
  * App.tsx — shell: chat column + stage (fretboard, transport,
  * timeline, mixer). Wires the core bandmate loop.
  * ============================================================ */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "./state/store";
-import { slotVoicing, chordAtBeat } from "./engine/progression";
+import { slotVoicing, chordAtBeat, serializeSong, deserializeSong } from "./engine/progression";
 import Fretboard, { type BoardDot } from "./ui/Fretboard";
 import Timeline from "./ui/Timeline";
 import TransportBar from "./ui/TransportBar";
@@ -26,6 +26,22 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   const { submit, audition, verdict, captureToggle } = useCowriter();
+
+  // restore last song once; persist on change
+  useEffect(() => {
+    const saved = localStorage.getItem("cowriter-song");
+    if (saved && !useStore.getState().song) {
+      try {
+        const s = deserializeSong(saved);
+        useStore.getState().setSong(s);
+        useStore.getState().setBpm(s.bpm);
+        useStore.getState().addMsg({ who: "system", text: `Restored your last progression (${s.sections[0]?.slots.length ?? 0} chords). Say where you want to take it.` });
+      } catch { /* corrupt save — ignore */ }
+    }
+  }, []);
+  useEffect(() => {
+    if (song) localStorage.setItem("cowriter-song", serializeSong(song));
+  }, [song]);
 
   // current chord's voicing as subdued dots
   const chordDots: BoardDot[] = useMemo(() => {
