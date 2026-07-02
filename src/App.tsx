@@ -1,122 +1,101 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+/* ============================================================
+ * App.tsx — shell: chat column + stage (fretboard, transport,
+ * timeline, mixer). Wires the core bandmate loop.
+ * ============================================================ */
+import { useMemo, useState } from "react";
+import { useStore } from "./state/store";
+import { slotVoicing, chordAtBeat } from "./engine/progression";
+import Fretboard, { type BoardDot } from "./ui/Fretboard";
+import Timeline from "./ui/Timeline";
+import TransportBar from "./ui/TransportBar";
+import Chat from "./ui/Chat";
+import MixerPanel from "./ui/MixerPanel";
+import SettingsModal from "./ui/SettingsModal";
+import { useCowriter } from "./ui/useCowriter";
+import { pluck } from "./ui/audioFacade";
+import "./theme.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const themeMode = useStore((s) => s.themeMode);
+  const song = useStore((s) => s.song);
+  const activePhrase = useStore((s) => s.activePhrase);
+  const userPhrase = useStore((s) => s.userPhrase);
+  const posBeat = useStore((s) => s.posBeat);
+  const playing = useStore((s) => s.playing);
+  const frame = useStore((s) => s.frame);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const { submit, audition, verdict, captureToggle } = useCowriter();
+
+  // current chord's voicing as subdued dots
+  const chordDots: BoardDot[] = useMemo(() => {
+    if (!song) return [];
+    const at = chordAtBeat(song, playing ? posBeat : 0);
+    const v = slotVoicing(at.slot);
+    return v.dots.map((d) => ({
+      stringNum: d.stringNum,
+      fret: d.fret,
+      label: d.tone.name,
+      fill: "var(--selection)",
+    }));
+  }, [song, playing, posBeat]);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className={`app theme-${themeMode}`}>
+      <header className="top">
+        <h1><span className="glyph">◆</span> Guitar Co-Writer</h1>
+        <span className="sub">your AI bandmate — ideas in, songs out</span>
+        <div className="grow" />
+        {frame && (
+          <span className="sub">
+            {frame.vibe.genre ?? ""} {frame.vibe.bpm ? `· ${frame.vibe.bpm} bpm` : ""} {frame.vibe.key ? `· ${frame.vibe.key}` : ""}
+          </span>
+        )}
+        <button className="iconbtn" title="Settings" onClick={() => setShowSettings(true)}>⚙</button>
+      </header>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <main className="cols">
+        <div className="chatcol">
+          <Chat onSubmit={submit} onAudition={audition} onVerdict={verdict} />
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        <div className="stagecol">
+          <div className="panel">
+            <div className="stagehead">
+              <b style={{ fontSize: 13.5 }}>The neck</b>
+              <span className="keybadge">
+                {activePhrase ? `AI line: ${activePhrase.label}` : "propose something to see it here"}
+                {userPhrase ? ` · your take overlaid` : ""}
+              </span>
+            </div>
+            <div className="boardwrap">
+              <Fretboard
+                chordDots={chordDots}
+                aiPhrase={activePhrase}
+                userPhrase={userPhrase}
+                posBeat={posBeat}
+                playing={playing}
+                onPluck={pluck}
+              />
+            </div>
+            <div className="legend">
+              <span><i className="chip" style={{ background: "var(--role-target)" }} /> chord tone (land here)</span>
+              <span><i className="chip" style={{ background: "var(--role-bridge)" }} /> bridge / passing</span>
+              <span><i className="chip" style={{ background: "var(--role-color)" }} /> color (outside)</span>
+              <span><i className="chip" style={{ background: "var(--voice-ai)" }} /> AI voice ring</span>
+              <span><i className="chip" style={{ background: "var(--voice-user)" }} /> your take ring</span>
+            </div>
+          </div>
+
+          <TransportBar onCaptureToggle={() => void captureToggle()} captureDisabled={false} />
+
+          {song && <div className="panel"><Timeline song={song} /></div>}
+
+          <MixerPanel />
+        </div>
+      </main>
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+    </div>
+  );
 }
-
-export default App
