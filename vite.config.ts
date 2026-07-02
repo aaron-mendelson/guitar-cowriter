@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "/guitar-cowriter/",   // GitHub Pages project path
+  base: process.env.VITE_BASE ?? "/guitar-cowriter/",   // GH Pages path; Docker build sets VITE_BASE=/
 })

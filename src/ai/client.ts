@@ -22,7 +22,13 @@ export const MODELS: { id: string; label: string }[] = [
 ];
 
 const STORAGE_KEY = "cowriter-ai-config";
-const DEFAULT_CONFIG: AiConfig = { mode: "byo-key", model: "claude-sonnet-4-6" };
+
+/** Self-hosted builds (Docker image) set VITE_SELF_HOSTED and ship a
+ * same-origin /cowrite backend holding the Claude subscription token —
+ * default to it. The public GitHub Pages build defaults to byo-key. */
+const DEFAULT_CONFIG: AiConfig = import.meta.env.VITE_SELF_HOSTED
+  ? { mode: "gateway", gatewayUrl: "/cowrite", model: "claude-sonnet-4-6" }
+  : { mode: "byo-key", model: "claude-sonnet-4-6" };
 
 function hasStorage(): boolean {
   return typeof localStorage !== "undefined";

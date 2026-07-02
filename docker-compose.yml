@@ -1,0 +1,15 @@
+services:
+  guitar-cowriter:
+    build: .
+    container_name: guitar-cowriter
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      # `claude setup-token` → paste into /opt/opal/guitar-cowriter/.env on the VPS
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      # optional bearer gate for /cowrite (tailnet-only box, so optional)
+      COWRITE_TOKEN: ${COWRITE_TOKEN:-}
+    env_file:
+      - path: .env
+        required: false
