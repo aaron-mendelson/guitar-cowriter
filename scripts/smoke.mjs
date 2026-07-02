@@ -1,7 +1,7 @@
 /* End-to-end smoke of the core loop (offline mode, no API key). */
 import { chromium } from "playwright";
 
-const url = "http://localhost:5199/";
+const url = process.env.SMOKE_URL || "http://localhost:5199/";
 const browser = await chromium.launch({
   args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--autoplay-policy=no-user-gesture-required"],
 });
