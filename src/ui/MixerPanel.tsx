@@ -64,9 +64,24 @@ export default function MixerPanel() {
   const inputDeviceId = useStore((s) => s.inputDeviceId);
   const setInputDeviceId = useStore((s) => s.setInputDeviceId);
 
+  // Browsers hide device names until mic permission is granted once —
+  // this asks, releases the stream immediately, then re-enumerates.
+  const findInputs = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+    } catch { /* denied — list stays label-less */ }
+    listAudioInputs().then(setDevices).catch(() => setDevices([]));
+  };
+
   useEffect(() => {
     listAudioInputs().then(setDevices).catch(() => setDevices([]));
+    const onChange = () => listAudioInputs().then(setDevices).catch(() => {});
+    navigator.mediaDevices?.addEventListener?.("devicechange", onChange);
+    return () => navigator.mediaDevices?.removeEventListener?.("devicechange", onChange);
   }, []);
+
+  const labelsMissing = devices.length === 0 || devices.every((d) => !d.label);
 
   const toggleRecord = async () => {
     if (!recording) {
@@ -93,6 +108,11 @@ export default function MixerPanel() {
         <label style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--comment)", fontWeight: 700 }}>
           Input device
         </label>
+        {labelsMissing && (
+          <button className="btn small" onClick={() => void findInputs()}>
+            🎙 Find my inputs (asks mic permission)
+          </button>
+        )}
         <select
           style={{ fontSize: 12.5, padding: "7px 9px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--panel-strong)", color: "var(--fg)", maxWidth: 220 }}
           value={inputDeviceId ?? ""}
