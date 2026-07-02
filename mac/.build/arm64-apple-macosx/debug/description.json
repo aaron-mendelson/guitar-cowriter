@@ -24,7 +24,31 @@
       "inputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Placeholder.swift"
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/AudioEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Devices.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Instruments.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/PitchTracker.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/PureTiming.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Recorder.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Transport.swift"
         },
         {
           "kind" : "file",
@@ -43,7 +67,13 @@
       "moduleName" : "CoWriterAudio",
       "moduleOutputPath" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/Modules/CoWriterAudio.swiftmodule",
       "objects" : [
-        "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Placeholder.swift.o"
+        "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/AudioEngine.swift.o",
+        "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Devices.swift.o",
+        "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Instruments.swift.o",
+        "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/PitchTracker.swift.o",
+        "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/PureTiming.swift.o",
+        "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Recorder.swift.o",
+        "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Transport.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -92,7 +122,31 @@
       "outputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Placeholder.swift.o"
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/AudioEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Devices.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Instruments.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/PitchTracker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/PureTiming.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Recorder.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Transport.swift.o"
         },
         {
           "kind" : "file",
@@ -101,7 +155,13 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
-        "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Placeholder.swift"
+        "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/AudioEngine.swift",
+        "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Devices.swift",
+        "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Instruments.swift",
+        "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/PitchTracker.swift",
+        "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/PureTiming.swift",
+        "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Recorder.swift",
+        "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Transport.swift"
       ],
       "tempsPath" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build",
       "wholeModuleOptimization" : false
@@ -485,7 +545,13 @@
       "-package-name",
       "mac",
       "-c",
-      "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Placeholder.swift",
+      "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/AudioEngine.swift",
+      "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Devices.swift",
+      "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Instruments.swift",
+      "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/PitchTracker.swift",
+      "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/PureTiming.swift",
+      "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Recorder.swift",
+      "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Transport.swift",
       "-I",
       "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -741,7 +807,31 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Placeholder.swift"
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/AudioEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Devices.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Instruments.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/PitchTracker.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/PureTiming.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Recorder.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Transport.swift"
         }
       ],
       "outputFilePath" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/sources"
@@ -895,7 +985,31 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Placeholder.swift.o"
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/AudioEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Devices.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Instruments.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/PitchTracker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/PureTiming.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Recorder.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Transport.swift.o"
         },
         {
           "kind" : "file",

@@ -3,6 +3,12 @@
 **Your AI bandmate** — an intent-driven co-writing tool for the intermediate guitarist who has
 ideas but can't quite get them onto paper.
 
+> **Two bodies, one brain.** The go-forward app is the **native Mac app** in [`mac/`](mac/) —
+> direct audio-interface access, Audio Unit plugin hosting (the AI plays *real* instruments,
+> your amp sim becomes an insert), built on the same theory engine and co-writer server.
+> Build it with `mac/make-app.sh` (Swift toolchain only, no Xcode needed).
+> The web app below remains as a lightweight demo.
+
 ![Guitar Co-Writer](scripts/smoke.png)
 
 Tell it what you've got and where you want to take it:
