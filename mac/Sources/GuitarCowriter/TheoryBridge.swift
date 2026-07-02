@@ -1,136 +1,155 @@
 // ============================================================
 // TheoryBridge.swift — the app's single seam onto CoWriterKit's
-// ported theory engine. PLACEHOLDER implementations below keep
-// the app compiling while the port lands; the integration pass
-// replaces each body with the real engine call.
-// NOTE(integration): replace all bodies marked TODO(engine).
+// ported theory engine (now fully wired to the real port).
 // ============================================================
 import Foundation
 import CoWriterKit
 
 enum TheoryBridge {
-    private static let rootNames = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"]
-    private static let openMidi = [6: 40, 5: 45, 4: 50, 3: 55, 2: 59, 1: 64]
+    private static let noteNames = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"]
 
     static func slotLabel(_ slot: ChordSlot) -> String {
-        // TODO(engine): Theory.slotLabel
-        let suffix: String
-        switch slot.typeKey {
-        case "major": suffix = ""
-        case "minor": suffix = "m"
-        case "dom7": suffix = "7"
-        case "maj7": suffix = "maj7"
-        case "min7": suffix = "m7"
-        case "dim": suffix = "°"
-        case "dim7": suffix = "°7"
-        case "m7b5": suffix = "m7♭5"
-        case "aug": suffix = "+"
-        default: suffix = slot.typeKey
-        }
-        return rootNames[slot.rootIdx % 12] + suffix
+        CoWriterKit.slotLabel(slot)
     }
 
     static func inversionCount(_ slot: ChordSlot) -> Int {
-        ["maj7", "dom7", "min7", "m7b5", "dim7"].contains(slot.typeKey) ? 4 : 3
+        Theory.CHORDS[slot.typeKey]?.n ?? 3
     }
 
     static func songFromChordNames(_ names: [String], bpm: Double, minor: Bool) -> Song {
-        // TODO(engine): Theory.songFromChordNames (correct suffix parsing + tonic)
-        let slots = names.map { raw -> ChordSlot in
-            let name = raw.replacingOccurrences(of: "#", with: "♯")
-            let rootTok = String(name.prefix(name.count > 1 && "♯♭b".contains(Array(name)[1]) ? 2 : 1))
-                .replacingOccurrences(of: "b", with: "♭")
-            let rootIdx = rootNames.firstIndex(of: rootTok) ?? 0
-            let rest = String(name.dropFirst(rootTok.count)).lowercased()
-            let typeKey: String
-            switch rest {
-            case "": typeKey = "major"
-            case "m", "min", "minor": typeKey = "minor"
-            case "7": typeKey = "dom7"
-            case "maj7": typeKey = "maj7"
-            case "m7", "min7": typeKey = "min7"
-            case "dim", "°": typeKey = "dim"
-            case "dim7": typeKey = "dim7"
-            case "m7b5": typeKey = "m7b5"
-            case "aug", "+": typeKey = "aug"
-            default: typeKey = "major"
-            }
-            return ChordSlot(rootIdx: rootIdx, typeKey: typeKey)
-        }
-        let tonicIdx = slots.first?.rootIdx ?? 0
-        return Song(tonicIdx: tonicIdx, mode: minor ? .minor : .major, bpm: bpm,
-                    sections: [SongSection(name: "Loop", slots: slots)])
+        // probe parse to find the first chord's root → tonic (mirrors web frameToSong)
+        let probe = CoWriterKit.songFromChordNames(names, tonicIdx: 0, mode: .major, bpm: bpm)
+        let first = probe.sections.first?.slots.first
+        let tonicIdx = first?.rootIdx ?? 0
+        let mode: KeyMode = minor || (first.map { $0.typeKey == "minor" || $0.typeKey == "min7" } ?? false) ? .minor : .major
+        return CoWriterKit.songFromChordNames(names, tonicIdx: tonicIdx, mode: mode, bpm: bpm)
     }
 
     static func songLengthBeats(_ song: Song) -> Double {
-        song.sections.reduce(0) { $0 + $1.slots.reduce(0) { $0 + $1.beats } }
+        CoWriterKit.songLengthBeats(song)
     }
 
+    /// The governing chord's voicing as subdued board dots.
     static func chordDots(song: Song, atBeat: Double) -> [BoardDot] {
-        // TODO(engine): slotVoicing → real voicing dots
-        []
-    }
-
-    static func placeOnNeck(_ events: [NoteEvent]) -> [NoteEvent] {
-        // TODO(engine): CoWriterKit placeOnNeck (fret-region continuity)
-        events.map { e in
-            var e = e
-            if e.stringNum == nil || e.fret == nil {
-                var best: (s: Int, f: Int, score: Int)? = nil
-                for s in stride(from: 6, through: 1, by: -1) {
-                    let f = e.midi - (openMidi[s] ?? 40)
-                    guard (0...18).contains(f) else { continue }
-                    let score = abs(f - 5)
-                    if best == nil || score < best!.score { best = (s, f, score) }
-                }
-                e.stringNum = best?.s
-                e.fret = best?.f
-            }
-            return e
+        let entry = chordAtBeat(song, atBeat)
+        let v = slotVoicing(entry.slot)
+        return v.dots.map {
+            BoardDot(stringNum: $0.stringNum, fret: $0.fret, label: $0.tone.name,
+                     fill: Palette.faint, ring: nil)
         }
     }
 
+    /// Chord hits for the transport's backing strums.
+    static func chordHits(_ song: Song) -> [(startBeat: Double, midis: [Int], beats: Double)] {
+        songTimeline(song).map { entry in
+            (startBeat: entry.startBeat, midis: slotVoicing(entry.slot).midis, beats: entry.slot.beats)
+        }
+    }
+
+    static func placeOnNeck(_ events: [NoteEvent]) -> [NoteEvent] {
+        CoWriterKit.placeOnNeck(events, preferFret: 5)
+    }
+
+    /// Engine sanitization — never trust the model's roles/timing (port of sanitizeTurn).
     static func sanitize(_ options: [MelodyOption], song: Song?) -> [MelodyOption] {
-        // TODO(engine): role re-classification via classifyPc + monophony clamp
-        options.map { opt in
+        options.prefix(3).map { opt in
             var opt = opt
-            opt.events = placeOnNeck(opt.events.filter { $0.midi >= 36 && $0.midi <= 88 && $0.durBeat > 0 }
-                .sorted { $0.startBeat < $1.startBeat })
+            var events = opt.events
+                .filter { $0.midi >= 36 && $0.midi <= 88 && $0.durBeat > 0 && $0.startBeat >= 0 }
+                .sorted { $0.startBeat < $1.startBeat }
+            if let song {
+                let len = CoWriterKit.songLengthBeats(song)
+                let tonic = Theory.ROOTS[song.tonicIdx]
+                events = events.map { e in
+                    var e = e
+                    if len > 0, e.startBeat >= len { e.startBeat = e.startBeat.truncatingRemainder(dividingBy: len) }
+                    let entry = chordAtBeat(song, e.startBeat)
+                    let chord = ChordRef(root: slotRoot(entry.slot), typeKey: entry.slot.typeKey)
+                    e.role = Theory.classifyPc(((e.midi % 12) + 12) % 12, chord: chord, tonic: tonic, mode: song.mode)
+                    if len > 0 { e.durBeat = min(e.durBeat, len - e.startBeat) }
+                    return e
+                }
+                .sorted { $0.startBeat < $1.startBeat }
+            }
+            // monophony: truncate overlaps
+            for i in 0..<max(0, events.count - 1) {
+                let nextStart = events[i + 1].startBeat
+                if events[i].startBeat + events[i].durBeat > nextStart {
+                    events[i].durBeat = max(0.25, nextStart - events[i].startBeat)
+                }
+            }
+            opt.events = CoWriterKit.placeOnNeck(events, preferFret: 5)
             return opt
         }
     }
 
+    /// Full musical context for the co-writer (port of cowriterPrompt.ts core).
     static func systemPrompt(song: Song?) -> String {
-        // TODO(engine): full musical context (romans, chord tones, scale choices)
         var s = """
         You are a warm, momentum-keeping co-writing bandmate for an intermediate guitarist named Aaron. \
-        Think out loud concisely; tie every suggestion to chord tones and degrees; name your method as a short \
-        teaching label; give 2-3 options each with a one-word character; always end with a small nudge forward. \
-        Melodies must be MONOPHONIC note events with startBeat within the loop, durations > 0, midi 52-80 preferred. \
-        Use role "target" for chord tones, "bridge" for diatonic passing tones, "color" for outside notes. \
-        Leave space — rests are musical.
+        Think out loud concisely. Tie every suggestion to chord tones and degrees. Name your method as a short \
+        teaching label. Offer 2-3 options, each with a one-word character (e.g. "sparse", "hopeful", "bluesy"). \
+        Always end with a small nudge forward. Never overwhelm.
+
+        OUTPUT RULES for note events: melody is MONOPHONIC (no overlaps); startBeat within [0, loop length); \
+        durations > 0; prefer midi 52-80; land chord tones ("target") on strong beats; connect with diatonic \
+        passing tones ("bridge"); outside notes are deliberate spice ("color"). LEAVE SPACE — rests are musical.
         """
-        if let song {
-            let names = song.sections.flatMap { $0.slots }.map { slotLabel($0) }
-            s += "\n\nCURRENT LOOP: \(names.joined(separator: " – ")) at \(Int(song.bpm)) bpm, " +
-                 "\(rootNames[song.tonicIdx]) \(song.mode.rawValue), \(Int(songLengthBeats(song))) beats total. " +
-                 "Each chord lasts 4 beats starting at beats 0, 4, 8, …"
+        guard let song else { return s }
+        let tonic = Theory.ROOTS[song.tonicIdx]
+        let len = CoWriterKit.songLengthBeats(song)
+        s += "\n\nKEY: \(tonic.name) \(song.mode.rawValue) · \(Int(song.bpm)) bpm · loop \(Int(len)) beats\nTHE CHANGES:"
+        for entry in songTimeline(song) {
+            let slot = entry.slot
+            let root = slotRoot(slot)
+            let chord = ChordRef(root: root, typeKey: slot.typeKey)
+            let roman = Theory.romanInKey(root, slot.typeKey, tonic, song.mode) ?? "·"
+            let tones = Theory.chordTones(root, slot.typeKey).tones
+                .map { "\($0.name)(\($0.deg))" }.joined(separator: " ")
+            let guide = Theory.chordTones(root, slot.typeKey).tones[1]
+            let choices = Theory.chordScaleChoices(chord, tonic: tonic, mode: song.mode)
+                .map { c in "\(c.label)\(c.outside ? " [OUTSIDE]" : "") — \(c.why)" }
+                .joined(separator: " | ")
+            s += "\n• beat \(Int(entry.startBeat)), \(Int(slot.beats)) beats: \(CoWriterKit.slotLabel(slot)) (\(roman)) — tones \(tones); guide tone \(guide.name); scales: \(choices)"
         }
         return s
     }
 
+    /// Musical diff summary (compact port of src/listen/diff.ts).
     static func diffSummary(proposal: [NoteEvent], variant: [NoteEvent]) -> String {
-        // TODO(engine): full diff port (pitch/rhythm/add/drop); this is a serviceable v1
         var parts: [String] = []
-        let n = min(proposal.count, variant.count)
-        for i in 0..<n {
-            let dp = variant[i].midi - proposal[i].midi
-            if dp != 0 { parts.append("note \(i + 1): played \(dp > 0 ? "+" : "")\(dp) semitones") }
-            let dt = variant[i].startBeat - proposal[i].startBeat
-            if abs(dt) >= 0.25 { parts.append("note \(i + 1): entrance \(dt > 0 ? "late" : "early") by \(String(format: "%.2g", abs(dt))) beats") }
+        var usedVariant = Set<Int>()
+        let beatTol = 0.6
+        func name(_ midi: Int) -> String { noteNames[((midi % 12) + 12) % 12] + "\(midi / 12 - 1)" }
+
+        for (pi, p) in proposal.enumerated() {
+            // nearest unused variant note within tolerance
+            var best: (vi: Int, d: Double)? = nil
+            for (vi, v) in variant.enumerated() where !usedVariant.contains(vi) {
+                let d = abs(v.startBeat - p.startBeat)
+                if d <= beatTol && (best == nil || d < best!.d) { best = (vi, d) }
+            }
+            guard let match = best else {
+                parts.append("dropped note \(pi + 1) (\(name(p.midi)))")
+                continue
+            }
+            usedVariant.insert(match.vi)
+            let v = variant[match.vi]
+            let dSemi = v.midi - p.midi
+            if dSemi != 0 {
+                parts.append("note \(pi + 1): played \(name(v.midi)) instead of \(name(p.midi)) (\(dSemi > 0 ? "+" : "")\(dSemi) semitones)")
+            }
+            let dBeat = v.startBeat - p.startBeat
+            if abs(dBeat) >= 0.25 {
+                parts.append("note \(pi + 1): entrance \(dBeat > 0 ? "delayed" : "rushed") by \(String(format: "%.2g", abs(dBeat))) beats")
+            }
+            if abs(v.durBeat - p.durBeat) >= 0.5 {
+                parts.append("note \(pi + 1): held \(v.durBeat > p.durBeat ? "longer" : "shorter")")
+            }
         }
-        if variant.count > proposal.count { parts.append("added \(variant.count - proposal.count) notes") }
-        if variant.count < proposal.count { parts.append("dropped \(proposal.count - variant.count) notes") }
+        for (vi, v) in variant.enumerated() where !usedVariant.contains(vi) {
+            parts.append("added a note (\(name(v.midi)))")
+        }
         return parts.isEmpty ? "played it essentially as proposed" : parts.joined(separator: "; ")
     }
 }
