@@ -131,6 +131,17 @@ final class Controller {
         }
     }
 
+    // MARK: lenses
+
+    func fireLens(_ lens: Lens) {
+        guard let song = state.song else { return }
+        let phrase = applyKnobs(lens.gen(song), state.knobs)
+        state.activePhrase = phrase
+        AudioFacade.shared.setPhrases([phrase])
+        state.add(.system, "Lens: \(lens.label) (knob-shaped) — \(lens.teach)")
+        if !state.playing { playStop() }
+    }
+
     // MARK: - Theory hooks (wired to CoWriterKit port at integration)
 
     func slotName(_ slot: ChordSlot) -> String {

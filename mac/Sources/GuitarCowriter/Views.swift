@@ -129,6 +129,8 @@ struct TransportBar: View {
     @Bindable var state: AppState
     var onPlayStop: () -> Void
     var onCapture: () -> Void
+    @State private var clickOn = true
+    @State private var countIn = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -144,6 +146,30 @@ struct TransportBar: View {
                     if !editing { AudioFacade.shared.setBpm(state.bpm) }
                 }.frame(width: 140)
                 Text("\(Int(state.bpm))").font(.system(size: 12, weight: .bold)).frame(width: 30)
+            }
+            Toggle("click", isOn: Binding(
+                get: { clickOn }, set: { clickOn = $0; AudioFacade.shared.setClick($0) }))
+                .toggleStyle(.checkbox).font(.system(size: 11))
+            Toggle("count-in", isOn: Binding(
+                get: { countIn }, set: { countIn = $0; AudioFacade.shared.setCountIn($0) }))
+                .toggleStyle(.checkbox).font(.system(size: 11))
+            Toggle("🥁 band", isOn: Binding(
+                get: { state.bandOn },
+                set: { on in
+                    state.bandOn = on
+                    AudioFacade.shared.setBand(on ? Arrangement(style: state.bandStyle) : nil)
+                }))
+                .toggleStyle(.checkbox).font(.system(size: 11))
+            if state.bandOn {
+                Picker("", selection: $state.bandStyle) {
+                    ForEach(Arrangement.Style.allCases, id: \.self) { st in
+                        Text(st.rawValue).tag(st)
+                    }
+                }
+                .labelsHidden().frame(width: 90)
+                .onChange(of: state.bandStyle) {
+                    AudioFacade.shared.setBand(Arrangement(style: state.bandStyle))
+                }
             }
             Spacer()
             if state.listening {

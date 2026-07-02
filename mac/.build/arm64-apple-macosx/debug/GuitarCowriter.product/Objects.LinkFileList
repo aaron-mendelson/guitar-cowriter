@@ -5,6 +5,7 @@
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/PureTiming.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Recorder.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Transport.swift.o
+/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Backing.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Core.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Melody.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Progression.swift.o
@@ -15,5 +16,6 @@
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/GuitarCowriter.build/Controller.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/GuitarCowriter.build/Facade.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/GuitarCowriter.build/FretboardView.swift.o
+/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/GuitarCowriter.build/RigPanel.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/GuitarCowriter.build/TheoryBridge.swift.o
 /Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/GuitarCowriter.build/Views.swift.o

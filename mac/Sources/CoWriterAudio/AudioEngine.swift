@@ -99,6 +99,7 @@ public final class CoWriterEngine {
 
     var instruments: [Voice: AVAudioUnit] = [:]
     var clickSampler: AVAudioUnitSampler?
+    var drumSampler: AVAudioUnitSampler?
     var inputEffect: AVAudioUnit?
 
     /// Fan-outs for the two shared taps (input node, main mixer).

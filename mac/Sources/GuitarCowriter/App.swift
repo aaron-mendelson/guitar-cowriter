@@ -54,6 +54,22 @@ struct MainView: View {
                                       onPluck: { AudioFacade.shared.pluck(midi: $0) })
                             .padding(.horizontal, 8)
                     }
+                    HStack(spacing: 6) {
+                        Text("LENSES").font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary)
+                        ForEach(LENSES, id: \.key) { lens in
+                            Button(lens.label) { controller.fireLens(lens) }
+                                .buttonStyle(.bordered).controlSize(.small).font(.system(size: 10.5))
+                                .help(lens.teach)
+                        }
+                        Button("clear line") {
+                            state.activePhrase = nil
+                            AudioFacade.shared.setPhrases([])
+                        }
+                        .buttonStyle(.plain).controlSize(.small).font(.system(size: 10.5)).foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .disabled(state.song == nil)
                     legend.padding(.bottom, 8)
                 }
                 .background(Color.primary.opacity(0.04))
@@ -70,6 +86,10 @@ struct MainView: View {
                         .background(Color.primary.opacity(0.04))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+
+                RigPanel(state: state, controller: controller)
+                    .background(Color.primary.opacity(0.04))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 Spacer(minLength: 0)
             }
             .padding(10)

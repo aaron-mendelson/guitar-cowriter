@@ -211,7 +211,8 @@ public final class Transport {
     private func schedulePhraseSegment(_ p: Phrase, segStart: Double, segEnd: Double, spb: Double) {
         let L = p.lengthBeats
         guard L > 0 else { return }
-        let voice: Voice = (p.voice == .ai && p.label != "drums") ? .ai : .backing
+        let isDrums = p.label == "drums"
+        let voice: Voice = (p.voice == .ai && !isDrums) ? .ai : .backing
         for ev in p.events {
             // Occurrences live at k*L + ev.startBeat; find the one inside the segment.
             let k = ((segStart - ev.startBeat) / L - Self.eps).rounded(.up)
@@ -221,11 +222,20 @@ public final class Transport {
             let durSec = max(0.05, ev.durBeat * spb)
             let midi = UInt8(clamping: ev.midi)
             let vel = UInt8(clamping: Int(((ev.vel ?? 0.8) * 127).rounded()))
-            schedule(at: when) { [engine] in
-                engine.send(noteOn: midi, vel: vel, to: voice)
-            }
-            schedule(at: when + durSec) { [engine] in
-                engine.send(noteOff: midi, to: voice)
+            if isDrums {
+                schedule(at: when) { [engine] in
+                    engine.sendDrum(noteOn: midi, vel: vel)
+                }
+                schedule(at: when + durSec) { [engine] in
+                    engine.sendDrum(noteOff: midi)
+                }
+            } else {
+                schedule(at: when) { [engine] in
+                    engine.send(noteOn: midi, vel: vel, to: voice)
+                }
+                schedule(at: when + durSec) { [engine] in
+                    engine.send(noteOff: midi, to: voice)
+                }
             }
         }
     }

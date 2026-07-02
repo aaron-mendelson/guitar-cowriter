@@ -29,6 +29,12 @@ final class AppState {
     var bpm: Double = 90
     var listening = false
 
+    // style knobs (shape lens lines + steer AI suggestions)
+    var knobs = Knobs()
+    // band
+    var bandOn = false
+    var bandStyle: Arrangement.Style = .pop
+
     // settings
     var brainConfig = BrainConfig.load()
     var showSettings = false

@@ -25,17 +25,34 @@ final class AudioFacade {
         }
     }
 
+    private var currentSong: Song?
+    private var melodic: [Phrase] = []
+    private(set) var band: Arrangement?
+
     func applySong(_ song: Song) {
         ensureStarted()
+        currentSong = song
         transport.setBpm(song.bpm)
         transport.setSong(chordHits: TheoryBridge.chordHits(song))
         let len = TheoryBridge.songLengthBeats(song)
         transport.setLoop(startBeat: 0, endBeat: len, on: true)
+        syncPhrases()
     }
 
     func setPhrases(_ phrases: [Phrase]) {
         ensureStarted()
-        transport.setPhrases(phrases)
+        melodic = phrases
+        syncPhrases()
+    }
+
+    func setBand(_ arr: Arrangement?) {
+        band = arr
+        syncPhrases()
+    }
+
+    private func syncPhrases() {
+        let backing = (band != nil && currentSong != nil) ? backingPhrases(currentSong!, band!) : []
+        transport.setPhrases(melodic + backing)
     }
 
     func play(from beat: Double = 0) {
@@ -60,7 +77,11 @@ final class AudioFacade {
 
     // MARK: mixer / devices / instruments (pass-throughs for future UI)
 
-    func setVolume(_ channel: AudioChannel, _ v: Float) { engine.setVolume(channel, v) }
+    private(set) var volumeCache: [AudioChannel: Float] = [.ai: 0.8, .backing: 0.8, .click: 0.8, .master: 0.8, .input: 0]
+    func setVolume(_ channel: AudioChannel, _ v: Float) {
+        volumeCache[channel] = v
+        engine.setVolume(channel, v)
+    }
     func rms(_ channel: AudioChannel) -> Float { engine.rms(channel) }
     func inputDevices() -> [AudioInputDevice] { AudioDevices.listInputDevices() }
     func selectInput(_ d: AudioInputDevice?) throws { try engine.selectInput(d) }

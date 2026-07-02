@@ -125,6 +125,19 @@ extension CoWriterEngine {
                 bankLSB: UInt8(kAUSampler_DefaultBankLSB))
             instruments[voice] = sampler
         }
+        if drumSampler == nil {
+            let sampler = AVAudioUnitSampler()
+            let mixer = mixer(for: Voice.backing)
+            avEngine.attach(sampler)
+            avEngine.connect(sampler, to: mixer, fromBus: 0,
+                             toBus: mixer.nextAvailableInputBus, format: nil)
+            try? sampler.loadSoundBankInstrument(
+                at: Self.dlsBankURL,
+                program: 0,
+                bankMSB: UInt8(kAUSampler_DefaultPercussionBankMSB),
+                bankLSB: UInt8(kAUSampler_DefaultBankLSB))
+            drumSampler = sampler
+        }
         if clickSampler == nil {
             let sampler = AVAudioUnitSampler()
             avEngine.attach(sampler)
@@ -140,6 +153,14 @@ extension CoWriterEngine {
     }
 
     // MARK: Playing
+
+    /// GM percussion hit (35 kick / 38 snare / 42 hat …) through the drum kit.
+    public func sendDrum(noteOn midi: UInt8, vel: UInt8) {
+        drumSampler?.startNote(midi, withVelocity: vel, onChannel: 9)
+    }
+    public func sendDrum(noteOff midi: UInt8) {
+        drumSampler?.stopNote(midi, onChannel: 9)
+    }
 
     public func send(noteOn midi: UInt8, vel: UInt8, to voice: Voice) {
         guard let inst = instruments[voice] as? AVAudioUnitMIDIInstrument else { return }
