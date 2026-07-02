@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/primary.swiftdeps"
+  },
+  "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterAudio/Placeholder.swift": {
+    "dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Placeholder.d",
+    "object": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Placeholder.swift.o",
+    "swiftmodule": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Placeholder~partial.swiftmodule",
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Placeholder.swiftdeps",
+    "diagnostics": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterAudio.build/Placeholder.dia"
+  }
+}

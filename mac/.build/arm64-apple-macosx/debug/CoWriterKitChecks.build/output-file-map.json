@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKitChecks.build/primary.swiftdeps"
+  },
+  "/Users/oh2kool4u/guitar-cowriter/mac/Checks/main.swift": {
+    "dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKitChecks.build/main.d",
+    "object": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKitChecks.build/main.swift.o",
+    "swiftmodule": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKitChecks.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKitChecks.build/main.swiftdeps",
+    "diagnostics": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKitChecks.build/main.dia"
+  }
+}

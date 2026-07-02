@@ -1,0 +1,33 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/primary.swiftdeps"
+  },
+  "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterKit/Core.swift": {
+    "dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Core.d",
+    "object": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Core.swift.o",
+    "swiftmodule": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Core~partial.swiftmodule",
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Core.swiftdeps",
+    "diagnostics": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Core.dia"
+  },
+  "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterKit/Melody.swift": {
+    "dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Melody.d",
+    "object": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Melody.swift.o",
+    "swiftmodule": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Melody~partial.swiftmodule",
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Melody.swiftdeps",
+    "diagnostics": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Melody.dia"
+  },
+  "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterKit/Progression.swift": {
+    "dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Progression.d",
+    "object": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Progression.swift.o",
+    "swiftmodule": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Progression~partial.swiftmodule",
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Progression.swiftdeps",
+    "diagnostics": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Progression.dia"
+  },
+  "/Users/oh2kool4u/guitar-cowriter/mac/Sources/CoWriterKit/Theory.swift": {
+    "dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Theory.d",
+    "object": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Theory.swift.o",
+    "swiftmodule": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Theory~partial.swiftmodule",
+    "swift-dependencies": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Theory.swiftdeps",
+    "diagnostics": "/Users/oh2kool4u/guitar-cowriter/mac/.build/arm64-apple-macosx/debug/CoWriterKit.build/Theory.dia"
+  }
+}
